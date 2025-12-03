@@ -1,0 +1,14 @@
+{
+    "parking_lots": [
+        {
+            "id": "lot1",
+            "name": "Parking Principal",
+            "url": "http://localhost:5000"
+        }
+    ],
+    "server": {
+        "port": 5005,
+        "host": "0.0.0.0",
+        "debug": true
+    }
+}

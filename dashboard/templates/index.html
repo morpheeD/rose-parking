@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rose Parking - Dashboard Central</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="logo">
+                <i class="fa-solid fa-square-parking"></i>
+                <h1>Rose Parking <span>Dashboard</span></h1>
+            </div>
+            <div class="status-indicator">
+                <span class="pulse"></span>
+                Système Actif
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="dashboard-grid" id="parking-grid">
+                <!-- Parking cards will be inserted here by JS -->
+                <div class="loading-state">
+                    <i class="fa-solid fa-circle-notch fa-spin"></i>
+                    <p>Chargement des données...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Edit Capacity Modal -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Modifier la Capacité</h2>
+            <p id="modal-parking-name">Parking Principal</p>
+            
+            <form id="capacity-form">
+                <input type="hidden" id="modal-parking-id">
+                <div class="form-group">
+                    <label for="new-capacity">Nouvelle Capacité Max</label>
+                    <input type="number" id="new-capacity" min="1" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" id="cancel-btn">Annuler</button>
+                    <button type="submit" class="btn-save">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
