@@ -9,6 +9,8 @@ from flask_cors import CORS
 import threading
 import time
 import json
+import cv2
+import numpy as np
 from datetime import datetime
 
 from database import Database
@@ -29,6 +31,13 @@ tracker = None
 camera = None
 processing_thread = None
 running = False
+
+# Video streaming globals
+latest_annotated_frame = None
+frame_lock = threading.Lock()
+last_detections = []
+last_tracked_objects = {}
+last_events = []
 
 # Load configuration from file
 def load_config():
@@ -130,6 +139,7 @@ def init_system():
 def process_frames():
     """Main processing loop (runs in thread)."""
     global detector, tracker, camera, running
+    global latest_annotated_frame, last_detections, last_tracked_objects, last_events
     
     while running:
         try:
@@ -144,6 +154,16 @@ def process_frames():
             
             # Update tracker
             tracked_objects, events = tracker.update(detections)
+            
+            # Store for video annotation
+            last_detections = detections
+            last_tracked_objects = tracked_objects
+            last_events = events.copy() if events else []
+            
+            # Create annotated frame for debug video
+            annotated_frame = annotate_frame(frame.copy(), detections, tracked_objects, events)
+            with frame_lock:
+                latest_annotated_frame = annotated_frame
             
             # Process events (entry/exit)
             for event in events:
@@ -166,6 +186,89 @@ def process_frames():
         except Exception as e:
             print(f"Error in processing loop: {e}")
             time.sleep(1)
+
+def annotate_frame(frame, detections, tracked_objects, events):
+    """
+    Annotate frame with detection boxes, IDs, and events.
+    
+    Args:
+        frame: Original frame
+        detections: List of detections
+        tracked_objects: Dict of tracked objects {id: center}
+        events: List of events that occurred
+    
+    Returns:
+        Annotated frame
+    """
+    output = frame.copy()
+    height, width = output.shape[:2]
+    
+    # Create event lookup for quick access
+    event_lookup = {event['vehicle_id']: event for event in events} if events else {}
+    
+    # Draw detections (bounding boxes)
+    for detection in detections:
+        bbox = detection.get('bbox', [])
+        if len(bbox) == 4:
+            x1, y1, x2, y2 = bbox
+            # Green box for detections
+            cv2.rectangle(output, (x1, y1), (x2, y2), (0, 255, 0), 2)
+    
+    # Draw tracked objects (IDs and trajectories)
+    for object_id, center in tracked_objects.items():
+        # Check if this object has an event
+        event = event_lookup.get(object_id)
+        
+        if event:
+            # Vehicle with event - use special color
+            event_type = event['type']
+            if event_type == 'entry':
+                color = (0, 255, 255)  # Yellow for entry
+                label = f"ID:{object_id} ENTREE"
+            else:
+                color = (0, 165, 255)  # Orange for exit
+                label = f"ID:{object_id} SORTIE"
+            circle_radius = 8
+        else:
+            # Normal tracked vehicle
+            color = (255, 0, 0)  # Blue
+            label = f"ID:{object_id}"
+            circle_radius = 5
+        
+        # Draw center point
+        cv2.circle(output, center, circle_radius, color, -1)
+        
+        # Draw label with background
+        (text_width, text_height), baseline = cv2.getTextSize(
+            label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2
+        )
+        
+        cv2.rectangle(
+            output,
+            (center[0] - 5, center[1] - text_height - 15),
+            (center[0] + text_width + 5, center[1] - 5),
+            color,
+            -1
+        )
+        
+        cv2.putText(
+            output, label,
+            (center[0], center[1] - 10),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2
+        )
+        
+        # Draw trajectory if available in tracker
+        if hasattr(tracker, 'previous_positions') and object_id in tracker.previous_positions:
+            points = tracker.previous_positions[object_id] + [center]
+            for i in range(1, len(points)):
+                cv2.line(output, points[i-1], points[i], color, 2)
+    
+    # Add info overlay at top
+    info_text = f"Vehicles: {len(tracked_objects)} | Frame: {tracker.frame_count if tracker else 0}"
+    cv2.rectangle(output, (0, 0), (width, 30), (0, 0, 0), -1)
+    cv2.putText(output, info_text, (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+    
+    return output
 
 def get_current_stats():
     """Get current parking statistics."""
@@ -236,6 +339,44 @@ def api_reset_count():
     socketio.emit('parking_update', stats, namespace='/')
     
     return jsonify({'success': True, 'message': 'Count reset to 0'})
+
+def generate_video_stream():
+    """Generate MJPEG stream from annotated frames."""
+    global latest_annotated_frame, frame_lock
+    
+    while True:
+        try:
+            with frame_lock:
+                if latest_annotated_frame is not None:
+                    frame = latest_annotated_frame.copy()
+                else:
+                    # Create a placeholder frame if no frame available
+                    frame = np.zeros((480, 640, 3), dtype=np.uint8)
+                    cv2.putText(frame, "En attente de video...", (150, 240),
+                              cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            
+            # Encode frame as JPEG
+            ret, buffer = cv2.imencode('.jpg', frame)
+            if not ret:
+                continue
+            
+            frame_bytes = buffer.tobytes()
+            
+            # Yield frame in MJPEG format
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+            
+            time.sleep(0.033)  # ~30 FPS
+            
+        except Exception as e:
+            print(f"Error generating video stream: {e}")
+            time.sleep(0.1)
+
+@app.route('/video_feed')
+def video_feed():
+    """Video streaming route."""
+    return Response(generate_video_stream(),
+                   mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/api/events', methods=['GET'])
 def api_events():

@@ -25,6 +25,34 @@ const elements = {
 
 // State
 let currentStats = null;
+let previousStats = null;
+let pollInterval = null;
+
+/**
+ * Poll for changes every 5 seconds
+ * Only reload page if entry/exit counts have changed
+ */
+function startPolling() {
+    pollInterval = setInterval(async () => {
+        try {
+            const response = await fetch('/api/stats');
+            const newStats = await response.json();
+
+            // Compare with previous stats
+            if (previousStats &&
+                (newStats.total_entries !== previousStats.total_entries ||
+                    newStats.total_exits !== previousStats.total_exits)) {
+                // There was a change, reload the page
+                console.log('Parking event detected, reloading page...');
+                location.reload();
+            }
+
+            previousStats = newStats;
+        } catch (error) {
+            console.error('Error polling stats:', error);
+        }
+    }, 5000); // 5 seconds
+}
 
 /**
  * Initialize application
@@ -32,6 +60,7 @@ let currentStats = null;
 function init() {
     setupEventListeners();
     loadInitialData();
+    startPolling(); // Start monitoring for changes
 }
 
 /**

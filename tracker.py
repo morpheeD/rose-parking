@@ -15,7 +15,8 @@ class VehicleTracker:
                  size_threshold_exit: int = 2000,
                  size_trend_frames: int = 5,
                  size_change_threshold_pct: float = 30.0,
-                 initial_count: int = 0):
+                 initial_count: int = 0,
+                 initialization_frames: int = 15):
         """
         Initialize vehicle tracker.
         
@@ -29,6 +30,7 @@ class VehicleTracker:
             size_trend_frames: Number of frames to analyze for size trend
             size_change_threshold_pct: Min % change in size to trigger event
             initial_count: Initial number of vehicles in the parking lot
+            initialization_frames: Number of frames to skip before counting events
         """
         self.entry_line = entry_line
         self.exit_line = exit_line
@@ -40,6 +42,10 @@ class VehicleTracker:
         self.size_threshold_exit = size_threshold_exit
         self.size_trend_frames = size_trend_frames
         self.size_change_threshold_pct = size_change_threshold_pct
+        
+        # Initialization period (prevent false first detections)
+        self.initialization_frames = initialization_frames
+        self.frame_count = 0
         
         # Tracking state
         self.next_object_id = 0
@@ -67,6 +73,7 @@ class VehicleTracker:
             - events: List of events (entry/exit) that occurred
         """
         events = []
+        self.frame_count += 1
         
         # If no detections, mark all as disappeared
         if len(detections) == 0:
@@ -181,57 +188,62 @@ class VehicleTracker:
                      new_center: Tuple[int, int], area: int) -> Optional[Dict]:
         """
         Check if object triggered an event (entry/exit).
-        Uses line crossing or size change depending on tracking_mode.
+        Uses direction-based detection for perspective_3d mode.
         
         Returns:
             Event dict if event detected, None otherwise
         """
         if self.tracking_mode == 'perspective_3d':
-            return self._check_size_change(object_id, area)
+            return self._check_direction_change(object_id)
         else:
             return self._check_line_crossing(object_id, old_center, new_center)
     
-    def _check_size_change(self, object_id: int, area: int) -> Optional[Dict]:
+    def _check_direction_change(self, object_id: int) -> Optional[Dict]:
         """
-        Check if object crossed entry or exit threshold based on size change.
-        For 3D perspective: approaching vehicles grow, receding vehicles shrink.
+        Check if object is entering or exiting based on movement direction.
+        For 3D perspective: vehicles moving down (Y↑) are approaching = entry,
+        vehicles moving up (Y↓) are receding = exit.
         
         Returns:
-            Event dict if crossing detected, None otherwise
+            Event dict if entry/exit detected, None otherwise
         """
+        # Skip detection during initialization period
+        if self.frame_count < self.initialization_frames:
+            return None
+        
         # Avoid counting the same object twice
         if object_id in self.counted_ids:
             return None
         
-        # Initialize size history for this object
-        if object_id not in self.object_sizes:
-            self.object_sizes[object_id] = []
-        
-        # Add current size
-        self.object_sizes[object_id].append(area)
-        
-        # Keep only last N sizes
-        if len(self.object_sizes[object_id]) > self.size_trend_frames:
-            self.object_sizes[object_id].pop(0)
-        
-        # Need at least 3 measurements for trend
-        if len(self.object_sizes[object_id]) < 3:
+        # Need position history to determine direction
+        if object_id not in self.previous_positions:
             return None
         
-        sizes = self.object_sizes[object_id]
-        first_size = sizes[0]
-        last_size = sizes[-1]
+        positions = self.previous_positions[object_id]
         
-        # Avoid division by zero
-        if first_size == 0:
+        # Need at least N positions to establish reliable trend
+        if len(positions) < self.size_trend_frames:
             return None
         
-        # Calculate size change percentage
-        size_change_pct = (last_size - first_size) / first_size * 100
+        # Calculate distances from camera position (0, 0 = top-left of frame)
+        def distance_from_camera(point):
+            """Calculate Euclidean distance from camera (0,0)"""
+            return np.sqrt(point[0]**2 + point[1]**2)
         
-        # Entry: size increases significantly AND exceeds threshold
-        # (vehicle approaching camera)
-        if size_change_pct > self.size_change_threshold_pct and last_size > self.size_threshold_entry:
+        first_pos = positions[0]
+        last_pos = positions[-1]
+        
+        first_distance = distance_from_camera(first_pos)
+        last_distance = distance_from_camera(last_pos)
+        
+        # Calculate change in distance
+        distance_change = last_distance - first_distance
+        
+        # Minimum distance change threshold (pixels)
+        min_distance_change = 50
+        
+        # ENTRY: Distance DECREASES (vehicle approaching camera/position 0)
+        if distance_change < -min_distance_change:
             self.entry_count += 1
             self.current_count += 1
             self.counted_ids.add(object_id)
@@ -239,13 +251,11 @@ class VehicleTracker:
                 'type': 'entry',
                 'vehicle_id': object_id,
                 'count': self.current_count,
-                'size': last_size,
-                'size_change_pct': round(size_change_pct, 1)
+                'distance_change': round(distance_change, 1)
             }
         
-        # Exit: size decreases significantly AND falls below threshold
-        # (vehicle receding from camera)
-        if size_change_pct < -self.size_change_threshold_pct and last_size < self.size_threshold_exit:
+        # EXIT: Distance INCREASES (vehicle receding from camera/position 0)
+        elif distance_change > min_distance_change:
             self.exit_count += 1
             self.current_count = max(0, self.current_count - 1)
             self.counted_ids.add(object_id)
@@ -253,8 +263,7 @@ class VehicleTracker:
                 'type': 'exit',
                 'vehicle_id': object_id,
                 'count': self.current_count,
-                'size': last_size,
-                'size_change_pct': round(size_change_pct, 1)
+                'distance_change': round(distance_change, 1)
             }
         
         return None

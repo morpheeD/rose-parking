@@ -9,7 +9,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <meta http-equiv="refresh" content="5">
 </head>
 
 <body>
@@ -85,6 +84,33 @@
                 <div class="occupancy-status" id="occupancyStatus">
                     <span class="status-indicator"></span>
                     <span class="status-message">En attente de données...</span>
+                </div>
+            </div>
+
+
+            <!-- Debug Video Section -->
+            <div class="debug-section">
+                <h2 class="section-title">🎥 Mode Debug - Vidéo en Direct</h2>
+                <div class="video-container">
+                    <img src="/video_feed" alt="Flux vidéo en direct" class="debug-video" id="debugVideo">
+                    <div class="video-legend">
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: rgb(0, 255, 0);"></span>
+                            <span>Détection (rectangle vert)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: rgb(255, 0, 0);"></span>
+                            <span>Tracking (point bleu)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: rgb(0, 255, 255);"></span>
+                            <span>ENTRÉE (jaune)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background-color: rgb(0, 165, 255);"></span>
+                            <span>SORTIE (orange)</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
