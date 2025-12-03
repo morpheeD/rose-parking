@@ -1,15 +1,6 @@
 # 🎬 Guide : Vidéo de Test pour le Système de Parking
 
-## ✅ Vidéo Générée
 
-Une vidéo de test a été créée : `test_traffic.mp4`
-
-**Caractéristiques** :
-- ⏱️ Durée : 60 secondes (boucle automatique)
-- 📐 Résolution : 640x480
-- 🚗 ~19 véhicules simulés
-- ➡️ Entrées (ligne verte à 30%)
-- ⬅️ Sorties (ligne rouge à 70%)
 
 ## 🚀 Utilisation
 
@@ -79,6 +70,7 @@ Modifiez `config.json` :
    - Total entrées/sorties
    - Pourcentage d'occupation
    - Historique des événements
+4. **url de video test** : https://youtu.be/ymuYdUT5p7Q?si=yV8KA2vSRSEMgCM9
 
 ## 🛠️ Personnalisation
 
@@ -107,4 +99,4 @@ Pour déployer sur Raspberry Pi :
 3. Le système détectera automatiquement le Pi
 4. Utilisera la caméra Pi (source: 0)
 5. Serveur accessible sur le réseau (0.0.0.0:5000)
-6. url de video test : https://youtu.be/ymuYdUT5p7Q?si=yV8KA2vSRSEMgCM9
+

@@ -406,3 +406,4 @@ Pour toute question :
 1. Vérifiez d'abord la section Dépannage
 2. Consultez les logs : `sudo journalctl -u parking -f`
 3. Vérifiez la configuration dans `config.json`
+4. Contact : morphee@morphee.ninja
