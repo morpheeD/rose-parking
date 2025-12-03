@@ -2,8 +2,8 @@
     "parking_lots": [
         {
             "id": "lot1",
-            "name": "Parking Principal",
-            "url": "http://localhost:5000"
+            "name": "P1",
+            "url": "http://192.168.1.198:5001"
         }
     ],
     "server": {
