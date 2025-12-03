@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mode Debug - Gestion de Parking</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .debug-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #f8f9fa;
+            color: #333;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .back-button:hover {
+            background-color: #e9ecef;
+            transform: translateX(-2px);
+        }
+
+        .video-wrapper {
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .debug-video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="debug-container">
+        <a href="/" class="back-button">← Retour au Dashboard</a>
+
+        <div class="header-content" style="margin-bottom: 20px;">
+            <h1 class="title">
+                <span class="icon">🎥</span>
+                Mode Debug - Flux Vidéo
+            </h1>
+        </div>
+
+        <div class="video-wrapper">
+            <img src="/video_feed" alt="Flux vidéo en direct" class="debug-video">
+        </div>
+
+        <div class="video-legend"
+            style="margin-top: 20px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+            <div class="legend-item">
+                <span class="legend-color" style="background-color: rgb(0, 255, 0);"></span>
+                <span>Détection (rectangle vert)</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background-color: rgb(255, 0, 0);"></span>
+                <span>Tracking (point bleu)</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background-color: rgb(0, 255, 255);"></span>
+                <span>ENTRÉE (jaune)</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background-color: rgb(0, 165, 255);"></span>
+                <span>SORTIE (orange)</span>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

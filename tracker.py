@@ -13,10 +13,10 @@ class VehicleTracker:
                  tracking_mode: str = 'line_crossing', 
                  size_threshold_entry: int = 5000,
                  size_threshold_exit: int = 2000,
-                 size_trend_frames: int = 5,
+                 size_trend_frames: int = 3,
                  size_change_threshold_pct: float = 30.0,
                  initial_count: int = 0,
-                 initialization_frames: int = 15):
+                 initialization_frames: int = 5):
         """
         Initialize vehicle tracker.
         
@@ -240,7 +240,7 @@ class VehicleTracker:
         distance_change = last_distance - first_distance
         
         # Minimum distance change threshold (pixels)
-        min_distance_change = 50
+        min_distance_change = 30
         
         # ENTRY: Distance DECREASES (vehicle approaching camera/position 0)
         if distance_change < -min_distance_change:

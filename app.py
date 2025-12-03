@@ -11,6 +11,7 @@ import time
 import json
 import cv2
 import numpy as np
+import queue
 from datetime import datetime
 
 from database import Database
@@ -39,6 +40,11 @@ last_detections = []
 last_tracked_objects = {}
 last_events = []
 
+# Database decoupling globals
+cached_max_capacity = 100
+event_queue = queue.Queue()
+db_worker_thread = None
+
 # Load configuration from file
 def load_config():
     """Load configuration from config.json with platform-specific overrides."""
@@ -60,6 +66,31 @@ def load_config():
     return config, platform
 
 CONFIG, DETECTED_PLATFORM = load_config()
+
+def db_worker():
+    """Worker thread to handle database operations asynchronously."""
+    global running, db
+    print("Starting database worker thread...")
+    
+    while running:
+        try:
+            # Get event from queue with timeout
+            try:
+                event_data = event_queue.get(timeout=1.0)
+            except queue.Empty:
+                continue
+            
+            # Log to database
+            event_type = event_data['type']
+            vehicle_id = event_data['vehicle_id']
+            current_count = event_data['count']
+            
+            db.log_event(event_type, vehicle_id, current_count)
+            event_queue.task_done()
+            
+        except Exception as e:
+            print(f"Error in DB worker: {e}")
+            time.sleep(1)
 
 def init_system():
     """Initialize detection system."""
@@ -117,8 +148,12 @@ def init_system():
     
     # Calculate initial count based on occupancy percentage
     initial_occupancy_pct = CONFIG.get('parking', {}).get('initial_occupancy_percent', 0)
-    max_capacity = db.get_max_capacity()
-    initial_count = int(max_capacity * initial_occupancy_pct / 100)
+    
+    # Use cached max capacity
+    global cached_max_capacity
+    cached_max_capacity = db.get_max_capacity()
+    
+    initial_count = int(cached_max_capacity * initial_occupancy_pct / 100)
     
     tracker = VehicleTracker(
         entry_line=entry_line,
@@ -171,8 +206,8 @@ def process_frames():
                 vehicle_id = event['vehicle_id']
                 current_count = event['count']
                 
-                # Log to database
-                db.log_event(event_type, vehicle_id, current_count)
+                # Log to database asynchronously
+                event_queue.put(event)
                 
                 # Emit to web clients
                 stats = get_current_stats()
@@ -272,7 +307,8 @@ def annotate_frame(frame, detections, tracked_objects, events):
 
 def get_current_stats():
     """Get current parking statistics."""
-    max_capacity = db.get_max_capacity()
+    # Use cached capacity to avoid DB read
+    max_capacity = cached_max_capacity
     tracker_stats = tracker.get_stats()
     current_count = tracker_stats['current_count']
     
@@ -296,6 +332,11 @@ def get_current_stats():
 def index():
     """Serve main page."""
     return render_template('index.html')
+
+@app.route('/debug')
+def debug_page():
+    """Serve debug page with video stream."""
+    return render_template('debug.html')
 
 @app.route('/api/stats', methods=['GET'])
 def api_stats():
@@ -321,6 +362,10 @@ def api_set_config():
             return jsonify({'error': 'Max capacity must be at least 1'}), 400
         
         db.set_max_capacity(max_capacity)
+        
+        # Update cache
+        global cached_max_capacity
+        cached_max_capacity = max_capacity
         
         # Emit update to all clients
         stats = get_current_stats()
@@ -368,7 +413,15 @@ def generate_video_stream():
             
             time.sleep(0.033)  # ~30 FPS
             
+        except GeneratorExit:
+            # Client disconnected
+            print("Client disconnected from video stream")
+            break
         except Exception as e:
+            # Handle broken pipe or other errors
+            if "Broken pipe" in str(e) or "Connection reset" in str(e):
+                print("Video stream connection closed")
+                break
             print(f"Error generating video stream: {e}")
             time.sleep(0.1)
 
@@ -408,9 +461,13 @@ def handle_request_update():
 
 def start_processing():
     """Start the processing thread."""
-    global processing_thread
     processing_thread = threading.Thread(target=process_frames, daemon=True)
     processing_thread.start()
+    
+    # Start DB worker thread
+    global db_worker_thread
+    db_worker_thread = threading.Thread(target=db_worker, daemon=True)
+    db_worker_thread.start()
 
 if __name__ == '__main__':
     try:
@@ -432,7 +489,7 @@ if __name__ == '__main__':
         print("="*60)
         print(f"Platform: {DETECTED_PLATFORM}")
         print(f"Web interface: http://{host if host != '0.0.0.0' else 'localhost'}:{port}")
-        print(f"Max capacity: {db.get_max_capacity()} spaces")
+        print(f"Max capacity: {cached_max_capacity} spaces")
         if CONFIG.get('simulation_mode', False):
             print("Mode: SIMULATION (no camera)")
         print("="*60 + "\n")
