@@ -107,3 +107,4 @@ Pour déployer sur Raspberry Pi :
 3. Le système détectera automatiquement le Pi
 4. Utilisera la caméra Pi (source: 0)
 5. Serveur accessible sur le réseau (0.0.0.0:5000)
+6. url de video test : https://youtu.be/ymuYdUT5p7Q?si=yV8KA2vSRSEMgCM9

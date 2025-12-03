@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +9,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta http-equiv="refresh" content="5">
 </head>
+
 <body>
     <div class="container">
         <!-- Header -->
@@ -93,21 +96,15 @@
                         <div class="form-group">
                             <label for="maxCapacityInput">Capacité Maximale du Parking</label>
                             <div class="input-group">
-                                <input 
-                                    type="number" 
-                                    id="maxCapacityInput" 
-                                    min="1" 
-                                    max="10000" 
-                                    placeholder="Ex: 100"
-                                    required
-                                >
+                                <input type="number" id="maxCapacityInput" min="1" max="10000" placeholder="Ex: 100"
+                                    required>
                                 <button type="submit" class="btn btn-primary">
                                     Mettre à Jour
                                 </button>
                             </div>
                         </div>
                     </form>
-                    
+
                     <div class="config-actions">
                         <button id="resetBtn" class="btn btn-secondary">
                             🔄 Réinitialiser le Compteur
@@ -148,4 +145,5 @@
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script src="/static/js/app.js"></script>
 </body>
+
 </html>
