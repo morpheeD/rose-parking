@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion de Parking - Temps Réel</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">
+                    <span class="icon">🚗</span>
+                    Gestion de Parking
+                </h1>
+                <div class="connection-status" id="connectionStatus">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Connexion...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Dashboard -->
+        <main class="dashboard">
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <!-- Occupied Spaces -->
+                <div class="stat-card occupied-card">
+                    <div class="stat-icon">🚙</div>
+                    <div class="stat-content">
+                        <div class="stat-label">Places Occupées</div>
+                        <div class="stat-value" id="occupiedCount">-</div>
+                    </div>
+                </div>
+
+                <!-- Available Spaces -->
+                <div class="stat-card available-card">
+                    <div class="stat-icon">✓</div>
+                    <div class="stat-content">
+                        <div class="stat-label">Places Disponibles</div>
+                        <div class="stat-value" id="availableCount">-</div>
+                    </div>
+                </div>
+
+                <!-- Total Capacity -->
+                <div class="stat-card capacity-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-content">
+                        <div class="stat-label">Capacité Totale</div>
+                        <div class="stat-value" id="maxCapacity">-</div>
+                    </div>
+                </div>
+
+                <!-- Occupancy Percentage -->
+                <div class="stat-card percentage-card">
+                    <div class="stat-icon">📈</div>
+                    <div class="stat-content">
+                        <div class="stat-label">Taux d'Occupation</div>
+                        <div class="stat-value" id="occupancyPercent">-%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Occupancy Bar -->
+            <div class="occupancy-section">
+                <h2 class="section-title">Occupation en Temps Réel</h2>
+                <div class="occupancy-bar-container">
+                    <div class="occupancy-bar">
+                        <div class="occupancy-fill" id="occupancyFill"></div>
+                    </div>
+                    <div class="occupancy-labels">
+                        <span>0%</span>
+                        <span>50%</span>
+                        <span>100%</span>
+                    </div>
+                </div>
+                <div class="occupancy-status" id="occupancyStatus">
+                    <span class="status-indicator"></span>
+                    <span class="status-message">En attente de données...</span>
+                </div>
+            </div>
+
+            <!-- Configuration Section -->
+            <div class="config-section">
+                <h2 class="section-title">Configuration</h2>
+                <div class="config-card">
+                    <form id="configForm" class="config-form">
+                        <div class="form-group">
+                            <label for="maxCapacityInput">Capacité Maximale du Parking</label>
+                            <div class="input-group">
+                                <input 
+                                    type="number" 
+                                    id="maxCapacityInput" 
+                                    min="1" 
+                                    max="10000" 
+                                    placeholder="Ex: 100"
+                                    required
+                                >
+                                <button type="submit" class="btn btn-primary">
+                                    Mettre à Jour
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <div class="config-actions">
+                        <button id="resetBtn" class="btn btn-secondary">
+                            🔄 Réinitialiser le Compteur
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Section -->
+            <div class="stats-section">
+                <h2 class="section-title">Statistiques</h2>
+                <div class="stats-cards">
+                    <div class="mini-card">
+                        <div class="mini-icon entry-icon">↓</div>
+                        <div class="mini-content">
+                            <div class="mini-label">Total Entrées</div>
+                            <div class="mini-value" id="totalEntries">0</div>
+                        </div>
+                    </div>
+                    <div class="mini-card">
+                        <div class="mini-icon exit-icon">↑</div>
+                        <div class="mini-content">
+                            <div class="mini-label">Total Sorties</div>
+                            <div class="mini-value" id="totalExits">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Dernière mise à jour: <span id="lastUpdate">-</span></p>
+        </footer>
+    </div>
+
+    <!-- Socket.IO Client -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

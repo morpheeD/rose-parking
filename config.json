@@ -1,0 +1,61 @@
+{
+    "camera": {
+        "source": 0,
+        "width": 640,
+        "height": 480,
+        "fps": 10
+    },
+    "detection": {
+        "model": "yolov8n.pt",
+        "confidence_threshold": 0.5,
+        "input_size": 416
+    },
+    "tracking": {
+        "mode": "perspective_3d",
+        "entry_line_ratio": 0.3,
+        "exit_line_ratio": 0.7,
+        "max_disappeared_frames": 30,
+        "size_threshold_entry": 5000,
+        "size_threshold_exit": 2000,
+        "size_trend_frames": 5,
+        "size_change_threshold_pct": 30.0
+    },
+    "parking": {
+        "default_max_capacity": 100,
+        "initial_occupancy_percent": 50
+    },
+    "server": {
+        "host": "0.0.0.0",
+        "port": 5000,
+        "debug": false
+    },
+    "simulation_mode": false,
+    "platform_configs": {
+        "mac": {
+            "camera": {
+                "source": "test_perspective.mp4",
+                "width": 640,
+                "height": 480,
+                "fps": 10
+            },
+            "server": {
+                "host": "127.0.0.1",
+                "port": 5000,
+                "debug": true
+            }
+        },
+        "raspberry_pi": {
+            "camera": {
+                "source": 0,
+                "width": 640,
+                "height": 480,
+                "fps": 10
+            },
+            "server": {
+                "host": "0.0.0.0",
+                "port": 5000,
+                "debug": false
+            }
+        }
+    }
+}

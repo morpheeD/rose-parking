@@ -1,0 +1,20 @@
+# Video files
+*.mp4
+*.avi
+*.mov
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Database
+*.db
+
+# Model weights (optional but recommended)
+*.pt
